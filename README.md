@@ -62,4 +62,4 @@ generate_graph(input_GTFS, output_path, format="gml")
 ```
 
 ## License
-TransNet Generator is released under the MIT License. See the LICENSE file for details.
+TransNet Generator is released under the MIT License. See the [LICENCE](LICENCE) file for details.

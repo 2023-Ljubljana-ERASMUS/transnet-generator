@@ -1,32 +1,34 @@
 import networkx as nx
 from datetime import datetime
+from prettytable import PrettyTable
 
 
-def generate_graph(input_GTFS: list, output_path: str, output_format="pajek", encoding="UTF-8") -> None:
+def generate_graph(input_GTFS: list, output_path: str, name="transport-network",
+                   output_format="pajek", encoding="UTF-8") -> None:
     """ Generate the transport graph and write it in the desired format.
 
     :param input_GTFS: The path to the directory containing the GTFS files.
-    :param output_path:  The name (and the path if the file isn't in the current working directory)
-    of the output graph file.
+    :param output_path:  The name (and the path if the file isn't in the current working directory) of the output graph file.
+    :param name: The name of the network
     :param output_format: The format of the output graph file.
     :param encoding:
     """
 
-    network = nx.Graph()
-    build_from_GTFS(input_GTFS, network)
+    graph = nx.Graph(name=name)
+    build_from_GTFS(input_GTFS, graph)
 
     if output_format == "pajek":
-        nx.write_pajek(network, output_path, encoding)
+        nx.write_pajek(graph, output_path, encoding)
     elif output_format == "gml":
-        nx.write_gml(network, output_path)
+        nx.write_gml(graph, output_path)
     else:
         raise ValueError(f"This output format [{output_format}] is not supported. Please use pajek or gml format.")
 
 
-def add_stops_attributes(source: str, network: nx.Graph) -> None:
+def add_stops_attributes(source: str, graph: nx.Graph) -> None:
     """ Add stops attributes to the graph.
 
-    :param network:
+    :param graph:
     :param source:
     """
 
@@ -39,12 +41,12 @@ def add_stops_attributes(source: str, network: nx.Graph) -> None:
                 lat = fields[3]
                 long = fields[4]
 
-                nx.set_node_attributes(network, {stop_id: stop_name}, "stop_name")
-                nx.set_node_attributes(network, {stop_id: lat}, "lat")
-                nx.set_node_attributes(network, {stop_id: long}, "long")
+                nx.set_node_attributes(graph, {stop_id: stop_name}, "stop_name")
+                nx.set_node_attributes(graph, {stop_id: lat}, "lat")
+                nx.set_node_attributes(graph, {stop_id: long}, "long")
 
 
-def build_from_GTFS(sources, network) -> None:
+def build_from_GTFS(sources, graph) -> None:
 
     if sources is None:
         raise ValueError()
@@ -63,7 +65,7 @@ def build_from_GTFS(sources, network) -> None:
 
                 if stop_sequence == 0:
                     # This is the starting point of the trip
-                    network.add_node(stop_point)
+                    graph.add_node(stop_point)
                 else:
                     # Compute travel time
                     # --> Check validity
@@ -77,10 +79,25 @@ def build_from_GTFS(sources, network) -> None:
                     delta = arrival - departure
                     travel_time = int(delta.total_seconds() // 60)
 
-                    network.add_node(stop_point)
-                    network.add_edge(stop_point, previous_stop_id, travel_time=travel_time)
+                    graph.add_node(stop_point)
+                    graph.add_edge(stop_point, previous_stop_id, travel_time=travel_time)
 
                 previous_stop_id = stop_point
                 departure_time = fields[2]
 
-        add_stops_attributes(source, network)
+        add_stops_attributes(source, graph)
+
+
+def graph_info(graph: nx.Graph):
+    # Create a pretty table to display the basic info
+    table = PrettyTable()
+    table.field_names = ["Graph property", "Value"]
+
+    # Add the graph properties to display
+    table.add_row(["Nodes", graph.number_of_nodes()])
+    table.add_row(["Edges", graph.number_of_edges()])
+    table.add_row(["Connected components", nx.number_connected_components(graph)])
+    table.add_row(["Average degree", round(sum(dict(graph.degree()).values()) / len(graph), 2)])
+
+    # Print the pretty table
+    print(table)

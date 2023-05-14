@@ -1,0 +1,14 @@
+[project]
+name = "transnet_generator"
+version = "0.1"
+authors = [
+  { name="B. Walleth"},
+]
+description = "TransNet Generator is a Python library for generating transport network from GTFS data."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]

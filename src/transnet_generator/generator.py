@@ -18,9 +18,11 @@ def generate_graph(input_GTFS: list, output_path: str, name="transport-network",
     build_from_GTFS(input_GTFS, graph)
 
     if output_format == "pajek":
+        # Convert numeric attributes to string
         travel_time = nx.get_edge_attributes(graph, "travel_time")
         travel_time = {k: str(v) for k, v in travel_time.items()}
         nx.set_edge_attributes(graph, travel_time, "travel_time")
+
         nx.write_pajek(graph, output_path, encoding)
     elif output_format == "gml":
         nx.write_gml(graph, output_path)

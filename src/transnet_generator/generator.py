@@ -35,14 +35,13 @@ def add_stops_attributes(source: str, network: nx.Graph) -> None:
             fields = line.split(',')
             stop_id = fields[0]
             if stop_id.startswith('StopPoint:'):
-                code_UIC = stop_point_to_code_UIC(stop_id)
                 stop_name = fields[1]
                 lat = fields[3]
                 long = fields[4]
 
-                nx.set_node_attributes(network, {code_UIC: stop_name}, "stop_name")
-                nx.set_node_attributes(network, {code_UIC: lat}, "lat")
-                nx.set_node_attributes(network, {code_UIC: long}, "long")
+                nx.set_node_attributes(network, {stop_id: stop_name}, "stop_name")
+                nx.set_node_attributes(network, {stop_id: lat}, "lat")
+                nx.set_node_attributes(network, {stop_id: long}, "long")
 
 
 def build_from_GTFS(sources, network) -> None:
@@ -59,12 +58,12 @@ def build_from_GTFS(sources, network) -> None:
                 fields = line.split(',')
 
                 arrival_time = fields[1]
-                code_UIC = stop_point_to_code_UIC(fields[3])  # Using the UIC code of the station
+                stop_point = fields[3]
                 stop_sequence = int(fields[4])
 
                 if stop_sequence == 0:
                     # This is the starting point of the trip
-                    network.add_node(code_UIC)
+                    network.add_node(stop_point)
                 else:
                     # Compute travel time
                     # --> Check validity
@@ -78,14 +77,10 @@ def build_from_GTFS(sources, network) -> None:
                     delta = arrival - departure
                     travel_time = int(delta.total_seconds() // 60)
 
-                    network.add_node(code_UIC)
-                    network.add_edge(code_UIC, previous_stop_id, travel_time=travel_time)
+                    network.add_node(stop_point)
+                    network.add_edge(stop_point, previous_stop_id, travel_time=travel_time)
 
-                previous_stop_id = code_UIC
+                previous_stop_id = stop_point
                 departure_time = fields[2]
 
         add_stops_attributes(source, network)
-
-
-def stop_point_to_code_UIC(stop_point):
-    return stop_point.split('-')[1]
